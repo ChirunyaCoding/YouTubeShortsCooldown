@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Shorts Watch Blocker",
+  "version": "1.0.0",
+  "description": "YouTube Shortsを5分間視聴した後、30分間ブロックする。",
+  "permissions": [
+    "storage",
+    "tabs",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}
