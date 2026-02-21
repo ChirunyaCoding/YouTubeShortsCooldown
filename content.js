@@ -118,7 +118,7 @@ function redirectFromShorts(remainingMs) {
 }
 
 function isActivelyWatchingShorts() {
-  return isOnShorts && document.visibilityState === "visible" && document.hasFocus();
+  return isOnShorts && document.visibilityState === "visible";
 }
 
 async function enforceBlockIfNeeded() {
@@ -214,5 +214,8 @@ window.addEventListener("focus", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (isOnShorts) {
+    void enforceBlockIfNeeded();
+  }
   void maybeShowBlockedBanner();
 });

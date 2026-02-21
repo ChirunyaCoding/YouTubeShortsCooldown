@@ -1,10 +1,12 @@
 const WATCH_LIMIT_MS = 5 * 60 * 1000;
 const BLOCK_DURATION_MS = 30 * 60 * 1000;
+const WATCH_RESET_IDLE_MS = 30 * 60 * 1000;
 const PERSIST_INTERVAL_MS = 5 * 1000;
 
 const STORAGE_KEYS = {
   watchMs: "shortsWatchMs",
-  blockUntil: "shortsBlockUntil"
+  blockUntil: "shortsBlockUntil",
+  lastWatchAt: "shortsLastWatchAt"
 };
 
 let cacheLoaded = false;
@@ -13,7 +15,8 @@ let operationQueue = Promise.resolve();
 
 const state = {
   watchMs: 0,
-  blockUntil: 0
+  blockUntil: 0,
+  lastWatchAt: 0
 };
 
 function isShortsUrl(urlString) {
@@ -40,11 +43,13 @@ async function ensureStateLoaded() {
 
   const loaded = await chrome.storage.local.get([
     STORAGE_KEYS.watchMs,
-    STORAGE_KEYS.blockUntil
+    STORAGE_KEYS.blockUntil,
+    STORAGE_KEYS.lastWatchAt
   ]);
 
   state.watchMs = Number(loaded[STORAGE_KEYS.watchMs] || 0);
   state.blockUntil = Number(loaded[STORAGE_KEYS.blockUntil] || 0);
+  state.lastWatchAt = Number(loaded[STORAGE_KEYS.lastWatchAt] || 0);
   cacheLoaded = true;
 }
 
@@ -57,7 +62,8 @@ async function persistState(force = false) {
   lastPersistAt = now;
   await chrome.storage.local.set({
     [STORAGE_KEYS.watchMs]: state.watchMs,
-    [STORAGE_KEYS.blockUntil]: state.blockUntil
+    [STORAGE_KEYS.blockUntil]: state.blockUntil,
+    [STORAGE_KEYS.lastWatchAt]: state.lastWatchAt
   });
 }
 
@@ -66,6 +72,26 @@ function clearExpiredBlock(now = Date.now()) {
     state.blockUntil = 0;
     return true;
   }
+  return false;
+}
+
+function clearIdleWatchProgress(now = Date.now()) {
+  if (state.watchMs <= 0) {
+    state.lastWatchAt = 0;
+    return false;
+  }
+
+  if (state.lastWatchAt <= 0) {
+    state.lastWatchAt = now;
+    return true;
+  }
+
+  if (now - state.lastWatchAt >= WATCH_RESET_IDLE_MS) {
+    state.watchMs = 0;
+    state.lastWatchAt = 0;
+    return true;
+  }
+
   return false;
 }
 
@@ -82,34 +108,46 @@ function buildStatus(now = Date.now()) {
 
 async function handleWatchTick(rawDeltaMs) {
   const now = Date.now();
-  const expired = clearExpiredBlock(now);
+  const blockExpired = clearExpiredBlock(now);
+  const idleReset = clearIdleWatchProgress(now);
 
   if (state.blockUntil > now) {
-    if (expired) {
+    if (blockExpired || idleReset) {
       await persistState(true);
     }
     return buildStatus(now);
   }
 
-  state.watchMs += clampDeltaMs(rawDeltaMs);
+  const deltaMs = clampDeltaMs(rawDeltaMs);
+  if (deltaMs <= 0) {
+    await persistState(blockExpired || idleReset);
+    return buildStatus(now);
+  }
+
+  state.watchMs += deltaMs;
+  state.lastWatchAt = now;
 
   if (state.watchMs >= WATCH_LIMIT_MS) {
     state.watchMs = 0;
+    state.lastWatchAt = 0;
     state.blockUntil = now + BLOCK_DURATION_MS;
     await persistState(true);
     return buildStatus(now);
   }
 
-  await persistState(expired);
+  await persistState(blockExpired || idleReset);
   return buildStatus(now);
 }
 
 async function getCurrentStatus() {
-  const expired = clearExpiredBlock(Date.now());
-  if (expired) {
+  const now = Date.now();
+  const blockExpired = clearExpiredBlock(now);
+  const idleReset = clearIdleWatchProgress(now);
+
+  if (blockExpired || idleReset) {
     await persistState(true);
   }
-  return buildStatus(Date.now());
+  return buildStatus(now);
 }
 
 async function bootstrap() {
