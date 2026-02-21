@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Shorts Watch Blocker",
+  "name": "YouTube Shorts Cooldown",
   "version": "1.0.0",
-  "description": "YouTube Shortsを5分間視聴した後、30分間ブロックする。",
+  "description": "YouTube Shortsを5分間視聴した後、30分間Shorts動画を見れなくする。",
   "permissions": [
     "storage",
     "tabs",

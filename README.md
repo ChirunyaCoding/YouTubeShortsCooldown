@@ -1,27 +1,27 @@
-# YouTube Shorts Watch Blocker
+# YouTube Shorts Cooldown
 
-Chrome extension (Manifest V3) that blocks YouTube Shorts for 30 minutes after 5 minutes of active Shorts watching.
+YouTube Shorts をアクティブに5分視聴すると、30分間 Shorts をブロックする Chrome 拡張機能です。
 
-## Behavior
+## 動作仕様
 
-- Active Shorts watch time is counted only when:
-  - URL is `https://www.youtube.com/shorts/...`
-  - tab content is visible
-  - page has focus
-- When active watch time reaches 5 minutes, Shorts are blocked for 30 minutes.
-- During the block, navigating to any Shorts URL is redirected to the YouTube home page.
-- A small banner on YouTube home shows the remaining block time.
+- Shorts の視聴時間は、次の条件をすべて満たす場合のみ加算されます。
+  - URL が `https://www.youtube.com/shorts/...` である
+  - タブが表示状態である
+  - ページにフォーカスがある
+- アクティブ視聴時間が5分に達すると、30分間 Shorts がブロックされます。
+- ブロック中に Shorts の URL へ遷移しようとすると、YouTube ホームへリダイレクトされます。
+- YouTube ホーム上部に、ブロック残り時間を示すバナーを表示します。
 
-## Install (Developer Mode)
+## インストール（デベロッパーモード）
 
-1. Open `chrome://extensions/`.
-2. Enable **Developer mode**.
-3. Click **Load unpacked**.
-4. Select this folder:
+1. `chrome://extensions/` を開く
+2. **デベロッパー モード** を有効化する
+3. **パッケージ化されていない拡張機能を読み込む** をクリックする
+4. 次のフォルダを選択する
    - `i:\Programming\PF\2026\2\YouTubeShort WatchBlocker`
 
-## Files
+## ファイル構成
 
-- `manifest.json`: extension configuration
-- `background.js`: timer and block-state management
-- `content.js`: YouTube page monitoring, watch ticks, redirect and banner
+- `manifest.json`: 拡張機能の設定ファイル
+- `background.js`: 視聴時間の管理とブロック状態の制御
+- `content.js`: YouTube ページ監視、視聴ティック送信、リダイレクトとバナー表示
